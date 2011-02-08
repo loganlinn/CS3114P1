@@ -1,3 +1,5 @@
+import java.util.List;
+
 /**
  * 
  * @author loganlinn
@@ -12,7 +14,7 @@ public class ReactionDependancyTable {
 	 * @param numReactions
 	 */
 	public ReactionDependancyTable(int numReactions) {
-
+		
 	}
 
 	/**
@@ -21,7 +23,13 @@ public class ReactionDependancyTable {
 	 * @return
 	 */
 	public boolean parseReaction(String input) {
-
+		
 		return true;
+	}
+	
+	public List<Integer> getDependentReactions(int speciesId){
+		List<Integer> reactionIds = null;
+		//TODO: get reaction ids
+		return reactionIds;
 	}
 }

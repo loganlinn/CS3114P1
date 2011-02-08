@@ -1,3 +1,6 @@
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * 
  * @author loganlinn
@@ -5,44 +8,90 @@
  */
 public class Simulation {
 
-	private int currentTime;
+	private double currentTime;
 	private int totalTime;
 	private ReactionDependancyTable reactionDependencies;
 	private ReactionHeap reactionHeap;
 	private int[] populations;
-
+	private Reaction[] reactions;
+	
 	public Simulation(int simulationLength, int[] populations, int numReactions) {
 		setTotalTime(simulationLength);
 	}
 
 	public void start() {
-
+		Reaction reaction;
+		double tau;
+		int reactionId;
+		double propensity;
+		double reactionTau;
+		
 		while (totalTime > currentTime) {
 			/*
 			 * 1) Pick next reaction to fire
 			 */
+			reactionId = reactionHeap.getNextReactionId();
 
 			/*
 			 * 2) Update simulation clock from reaction time
 			 */
-
+			tau = reactionHeap.getNextReactionTime();
+			stepTime(tau);
+			
 			/*
 			 * 3) Update populations
 			 */
-
+			reaction = reactions[reactionId];
+			reaction.fire();
+			
 			/*
-			 * 4) Update propensities
-			 */
-
-			/*
+			 * 4) Calculate propensities for reaction that just fired and all dependent reactions
 			 * 5) Setup next fire time
 			 */
-
+			
+			propensity = reaction.getReactionRate();				// Start propensity with constant, then multiply by each species' population in the reactant
+			List<Integer> dependentReactionIds = new LinkedList<Integer>();
+			for(int[] reactionTerm : reaction.getReactants()){
+				
+				int speciesId = reactionTerm[Reaction.SPECIES_ID_INDEX];
+				//Handle when the same species occurs multiple times on one side of reaction ie) S1+S1->S2
+				int termCoefficient = reactionTerm[Reaction.COEFFICIENT_INDEX];
+				while(termCoefficient-- > 0){
+					propensity *= populations[speciesId] - termCoefficient;
+				}
+				
+				dependentReactionIds.addAll(reactionDependencies.getDependentReactions(speciesId));
+			}
+			Reaction dependentReaction;
+			reactionTau = nextTau(propensity);
+			reactionHeap.setNextReactionTime(reactionId, reactionTau);
+			
+			/*
+			 * Update dependent propensities in heap
+			 */
+			for(Integer dependentReactionId : dependentReactionIds){
+				dependentReaction = reactions[dependentReactionId];
+				
+				propensity = dependentReaction.getReactionRate();	// Start propensity with constant, then multiply by each species' population in the reactant
+				for(int[] reactionTerm : reaction.getReactants()){
+					int speciesId = reactionTerm[Reaction.SPECIES_ID_INDEX];
+					
+					//Handle when the same species occurs multiple times on one side of reaction ie) S1+S1->S2
+					int termCoefficient = reactionTerm[Reaction.COEFFICIENT_INDEX];
+					while(termCoefficient-- > 0){
+						propensity *= populations[speciesId] - termCoefficient;
+					}
+				}
+				
+				reactionTau = nextTau(propensity);
+				reactionHeap.setNextReactionTime(dependentReactionId, reactionTau);
+			}
+			
 		}
 	}
 
-	public void stepTime(int delta) {
-		setCurrentTime(getCurrentTime() + delta);
+	public void stepTime(double tau) {
+		setCurrentTime(getCurrentTime() + tau);
 	}
 
 	// calculate the offset of the time for the next reaction to fire
@@ -56,7 +105,7 @@ public class Simulation {
 	/**
 	 * @return the currentTime
 	 */
-	public int getCurrentTime() {
+	public double getCurrentTime() {
 		return currentTime;
 	}
 
@@ -64,7 +113,7 @@ public class Simulation {
 	 * @param currentTime
 	 *            the currentTime to set
 	 */
-	public void setCurrentTime(int currentTime) {
+	public void setCurrentTime(double currentTime) {
 		this.currentTime = currentTime;
 	}
 
@@ -102,11 +151,11 @@ public class Simulation {
 	 * @param speciesId
 	 * @param population
 	 */
-	public void setPopulation(int speciesId, int population) {
+	public void incrementPopulation(int speciesId, int step) {
 		if (speciesId < 0 || speciesId >= populations.length) {
 			return;
 		}
-		populations[speciesId] = population;
+		populations[speciesId] = populations[speciesId]+step;
 	}
 
 	/**
