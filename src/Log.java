@@ -1,6 +1,10 @@
 import java.io.PrintStream;
 
-
+/**
+ * 
+ * @author loganlinn
+ * 
+ */
 public class Log {
 	private final String separator = " | ";
 	private String className;
@@ -9,48 +13,49 @@ public class Log {
 	private PrintStream errorStream = System.err;
 	private String messagePrefix;
 
-	public Log(Class c){
+	public Log(Class c) {
 		setClassName(c.getName());
 	}
-	
-	public void entry(String method){
+
+	public void entry(String method) {
 		setMethodName(method);
 		updateMessagePrefix();
 	}
-	
-	public void exit(){
+
+	public void exit() {
 		setMethodName(null);
 		updateMessagePrefix();
 	}
-	
-	protected void updateMessagePrefix(){
-		setMessagePrefix(getTime() + getSeparator() + className + getSeparator() + methodName + separator);
+
+	protected void updateMessagePrefix() {
+		setMessagePrefix(getTime() + getSeparator() + className
+				+ getSeparator() + methodName + separator);
 	}
-	
-	protected String getTime(){
+
+	protected String getTime() {
 		return String.valueOf(System.currentTimeMillis());
 	}
-	
-	public void info(String m){
-		String info = getMessagePrefix()+"info"+getSeparator()+m;
+
+	public void info(String m) {
+		String info = getMessagePrefix() + "info" + getSeparator() + m;
 		outStream.println(info);
 	}
-	
-	public void debug(String m){
-		String debug = getMessagePrefix()+"debug"+getSeparator()+m;
+
+	public void debug(String m) {
+		String debug = getMessagePrefix() + "debug" + getSeparator() + m;
 		outStream.println(debug);
 	}
-	
-	public void warn(String m){
-		String warn = getMessagePrefix()+"warn"+getSeparator()+m;
+
+	public void warn(String m) {
+		String warn = getMessagePrefix() + "warn" + getSeparator() + m;
 		outStream.println(warn);
 	}
-	
-	public void error(String m){
-		String error = getMessagePrefix()+"error"+getSeparator()+m;
+
+	public void error(String m) {
+		String error = getMessagePrefix() + "error" + getSeparator() + m;
 		errorStream.println(error);
 	}
-	
+
 	/**
 	 * @return the className
 	 */
@@ -59,7 +64,8 @@ public class Log {
 	}
 
 	/**
-	 * @param className the className to set
+	 * @param className
+	 *            the className to set
 	 */
 	public void setClassName(String className) {
 		this.className = className;
@@ -73,7 +79,8 @@ public class Log {
 	}
 
 	/**
-	 * @param methodName the methodName to set
+	 * @param methodName
+	 *            the methodName to set
 	 */
 	public void setMethodName(String methodName) {
 		this.methodName = methodName;
@@ -87,7 +94,8 @@ public class Log {
 	}
 
 	/**
-	 * @param outStream the outStream to set
+	 * @param outStream
+	 *            the outStream to set
 	 */
 	public void setOutStream(PrintStream outStream) {
 		this.outStream = outStream;
@@ -101,7 +109,8 @@ public class Log {
 	}
 
 	/**
-	 * @param errorStream the errorStream to set
+	 * @param errorStream
+	 *            the errorStream to set
 	 */
 	public void setErrorStream(PrintStream errorStream) {
 		this.errorStream = errorStream;
@@ -115,7 +124,8 @@ public class Log {
 	}
 
 	/**
-	 * @param messagePrefix the messagePrefix to set
+	 * @param messagePrefix
+	 *            the messagePrefix to set
 	 */
 	public void setMessagePrefix(String messagePrefix) {
 		this.messagePrefix = messagePrefix;

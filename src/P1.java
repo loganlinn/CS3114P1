@@ -3,7 +3,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-
+/**
+ * 
+ * @author loganlinn
+ *
+ */
 public class P1 {
 	/**
 	 * Simulation variables
@@ -138,7 +142,9 @@ public class P1 {
 		 * Create and run the simulation
 		 */
 		Simulation simulation;
-		
+		for(int i = 0; i < numSpecies; i++){
+			
+		}
 		
 		log.info("Completed");
 		log.exit();

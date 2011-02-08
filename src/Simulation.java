@@ -1,3 +1,8 @@
+/**
+ * 
+ * @author loganlinn
+ * 
+ */
 public class Simulation {
 
 	private int currentTime;
@@ -5,7 +10,7 @@ public class Simulation {
 	private ReactionDependancyTable reactionDependencies;
 	private ReactionHeap reactionHeap;
 	private int[] populations;
-	
+
 	public Simulation(int simulationLength, int[] populations, int numReactions) {
 		setTotalTime(simulationLength);
 	}
@@ -16,23 +21,23 @@ public class Simulation {
 			/*
 			 * 1) Pick next reaction to fire
 			 */
-			
+
 			/*
 			 * 2) Update simulation clock from reaction time
 			 */
-			
+
 			/*
 			 * 3) Update populations
 			 */
-			
+
 			/*
 			 * 4) Update propensities
 			 */
-			
+
 			/*
 			 * 5) Setup next fire time
 			 */
-			
+
 		}
 	}
 
@@ -56,7 +61,8 @@ public class Simulation {
 	}
 
 	/**
-	 * @param currentTime the currentTime to set
+	 * @param currentTime
+	 *            the currentTime to set
 	 */
 	public void setCurrentTime(int currentTime) {
 		this.currentTime = currentTime;
@@ -70,36 +76,39 @@ public class Simulation {
 	}
 
 	/**
-	 * @param totalTime the totalTime to set
+	 * @param totalTime
+	 *            the totalTime to set
 	 */
 	public void setTotalTime(int totalTime) {
 		this.totalTime = totalTime;
 	}
-	
+
 	/**
 	 * Gets the population for a specific species
+	 * 
 	 * @param speciesId
 	 * @return
 	 */
-	public int getPopulation(int speciesId){
-		if(speciesId < 0 || speciesId >= populations.length){
+	public int getPopulation(int speciesId) {
+		if (speciesId < 0 || speciesId >= populations.length) {
 			return 0;
 		}
 		return populations[speciesId];
 	}
-	
+
 	/**
 	 * Sets a specific species' population
+	 * 
 	 * @param speciesId
 	 * @param population
 	 */
-	public void setPopulation(int speciesId, int population){
-		if(speciesId < 0 || speciesId >= populations.length){
+	public void setPopulation(int speciesId, int population) {
+		if (speciesId < 0 || speciesId >= populations.length) {
 			return;
 		}
 		populations[speciesId] = population;
 	}
-	
+
 	/**
 	 * @return the populations
 	 */
@@ -108,10 +117,11 @@ public class Simulation {
 	}
 
 	/**
-	 * @param populations the populations to set
+	 * @param populations
+	 *            the populations to set
 	 */
 	public void setPopulations(int[] populations) {
 		this.populations = populations;
 	}
-	
+
 }
