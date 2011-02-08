@@ -51,11 +51,11 @@ public class Simulation {
 			
 			propensity = reaction.getReactionRate();				// Start propensity with constant, then multiply by each species' population in the reactant
 			List<Integer> dependentReactionIds = new LinkedList<Integer>();
-			for(int[] reactionTerm : reaction.getReactants()){
+			for(ReactionTerm reactionTerm : reaction.getReactants()){
 				
-				int speciesId = reactionTerm[Reaction.SPECIES_ID_INDEX];
+				int speciesId = reactionTerm.getSpeciesId();
 				//Handle when the same species occurs multiple times on one side of reaction ie) S1+S1->S2
-				int termCoefficient = reactionTerm[Reaction.COEFFICIENT_INDEX];
+				int termCoefficient = reactionTerm.getCoefficient();
 				while(termCoefficient-- > 0){
 					propensity *= populations[speciesId] - termCoefficient;
 				}
@@ -73,11 +73,11 @@ public class Simulation {
 				dependentReaction = reactions[dependentReactionId];
 				
 				propensity = dependentReaction.getReactionRate();	// Start propensity with constant, then multiply by each species' population in the reactant
-				for(int[] reactionTerm : reaction.getReactants()){
-					int speciesId = reactionTerm[Reaction.SPECIES_ID_INDEX];
+				for(ReactionTerm reactionTerm : reaction.getReactants()){
+					int speciesId = reactionTerm.getSpeciesId();
 					
 					//Handle when the same species occurs multiple times on one side of reaction ie) S1+S1->S2
-					int termCoefficient = reactionTerm[Reaction.COEFFICIENT_INDEX];
+					int termCoefficient = reactionTerm.getCoefficient();
 					while(termCoefficient-- > 0){
 						propensity *= populations[speciesId] - termCoefficient;
 					}
