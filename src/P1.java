@@ -130,12 +130,15 @@ public class P1 {
 			return;
 		}
 		
-		if(parseSuccess){
-			/*
-			 * Run the simulation
-			 */
-			
+		if(!parseSuccess){
+			return;
 		}
+		
+		/*
+		 * Create and run the simulation
+		 */
+		Simulation simulation;
+		
 		
 		log.info("Completed");
 		log.exit();

@@ -2,12 +2,12 @@ public class Simulation {
 
 	private int currentTime;
 	private int totalTime;
+	private ReactionDependancyTable reactionDependencies;
+	private ReactionHeap reactionHeap;
+	private int[] populations;
 	
-	private Species[] species;
-	
-	public Simulation(int simulationLength, Species[] species, int numReactions) {
+	public Simulation(int simulationLength, int[] populations, int numReactions) {
 		setTotalTime(simulationLength);
-		setSpecies(species);
 	}
 
 	public void start() {
@@ -77,26 +77,41 @@ public class Simulation {
 	}
 	
 	/**
-	 * @return the species
+	 * Gets the population for a specific species
+	 * @param speciesId
+	 * @return
 	 */
-	public Species getSpecies(int index) {
-		if(index >= species.length || index < 0){
-			return null;
+	public int getPopulation(int speciesId){
+		if(speciesId < 0 || speciesId >= populations.length){
+			return 0;
 		}
-		return species[index];
+		return populations[speciesId];
 	}
 	
 	/**
-	 * @return the species
+	 * Sets a specific species' population
+	 * @param speciesId
+	 * @param population
 	 */
-	public Species[] getSpecies() {
-		return species;
+	public void setPopulation(int speciesId, int population){
+		if(speciesId < 0 || speciesId >= populations.length){
+			return;
+		}
+		populations[speciesId] = population;
+	}
+	
+	/**
+	 * @return the populations
+	 */
+	public int[] getPopulations() {
+		return populations;
 	}
 
 	/**
-	 * @param species the species to set
+	 * @param populations the populations to set
 	 */
-	public void setSpecies(Species[] species) {
-		this.species = species;
+	public void setPopulations(int[] populations) {
+		this.populations = populations;
 	}
+	
 }
