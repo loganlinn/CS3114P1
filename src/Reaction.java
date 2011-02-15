@@ -23,6 +23,7 @@ public class Reaction {
 		}
 	}
 	
+	
 	public double getPropensity(){
 		double propensity = getReactionRate();
 		for(ReactionTerm reactantTerm : reactants){
