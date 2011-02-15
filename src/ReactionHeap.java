@@ -3,7 +3,7 @@
  * @author loganlinn
  * 
  */
-public class ReactionHeap {
+public class ReactionHeap extends MinHeap{
 
 	public void setNextReactionTime(int reactionId, double reactionTau) {
 

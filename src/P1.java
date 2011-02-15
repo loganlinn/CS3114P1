@@ -12,15 +12,17 @@ public class P1 {
 	/**
 	 * Simulation variables
 	 */
-	private static Log log = new Log(P1.class);
-	private static ReactionDependancyTable reactions;
+	private static final Log log = new Log(P1.class);
+	private static final Simulation simulation = new Simulation();
 	private static int numSpecies;
 	private static int numReactions;
 	private static int numChemicalSpecies;
 	private static int simulationLength;
 	private static int[] populations;
-
-	private static boolean parseInputFile(String inputFilePath) throws IOException, NumberFormatException {
+	
+	private static final String INPUT_SEPARATOR = " ";
+	
+	private static boolean parseInputFile(String inputFilePath) throws Exception {
 		/**
 		 * Input read the input file
 		 */
@@ -40,7 +42,7 @@ public class P1 {
 			return false;
 		}
 
-		String[] simulationValues = line.split(" ");
+		String[] simulationValues = line.split(INPUT_SEPARATOR);
 		if (simulationValues.length < 4) {
 			log.error("Line 0 requires 4 values");
 			return false;
@@ -61,7 +63,7 @@ public class P1 {
 			log.error("Missing line 1");
 			return false;
 		}
-		String[] populationInput = line.split(" ");
+		String[] populationInput = line.split(INPUT_SEPARATOR);
 
 		// Verify that enough populations are provided
 		if (populationInput.length < numSpecies) {
@@ -83,7 +85,7 @@ public class P1 {
 			log.error("Missing line 2");
 			return false;
 		}
-		String[] indicesInput = line.split(" ");
+		String[] indicesInput = line.split(INPUT_SEPARATOR);
 
 		// Verify that enough indices have been provided
 		if (indicesInput.length < numChemicalSpecies) {
@@ -98,14 +100,15 @@ public class P1 {
 		/**
 		 * Line 4-(numReactions+4): Reactions
 		 */
-		reactions = new ReactionDependancyTable(numReactions);
-		for (int i = 0; i < numReactions; i++) {
+		simulation.setNumberOfReactions(numReactions);
+		
+		for (int reactionId = 0; reactionId < numReactions; reactionId++) {
 			line = inputBuffer.readLine();
 			if (line == null) {
-				log.error("Missing an reaction #" + i);
+				log.error("Missing an reaction #" + reactionId);
 				return false;
 			}
-			reactions.parseReaction(line);
+			simulation.addReaction(reactionId, line);
 		}
 
 		return true;
@@ -114,14 +117,15 @@ public class P1 {
 	public static void main(String[] args) {
 
 		log.entry("main");
-
+		
 		if (args.length < 1) {
 			log.error("Input file not specified.");
 			return;
 		}
 		String inputFilePath = args[0];
 		
-		boolean parseSuccess;
+		boolean parseSuccess = false;
+		
 		try {
 			parseSuccess = parseInputFile(inputFilePath);
 		} catch (NumberFormatException e) {
@@ -132,6 +136,9 @@ public class P1 {
 			e.printStackTrace();
 			parseSuccess = false;
 			return;
+		} catch (Exception e) {
+			e.printStackTrace();
+			parseSuccess = false;
 		}
 		
 		if(!parseSuccess){
@@ -139,12 +146,9 @@ public class P1 {
 		}
 		
 		/*
-		 * Create and run the simulation
+		 * Run the simulation
 		 */
-		Simulation simulation;
-		for(int i = 0; i < numSpecies; i++){
-			
-		}
+		
 		
 		log.info("Completed");
 		log.exit();
