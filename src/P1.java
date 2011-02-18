@@ -1,28 +1,32 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 
  * @author loganlinn
- *
+ * 
  */
 public class P1 {
 	/**
 	 * Simulation variables
 	 */
 	private static final Log log = new Log(P1.class);
-	private static final Simulation simulation = new Simulation();
 	private static int numSpecies;
 	private static int numReactions;
 	private static int numChemicalSpecies;
 	private static int simulationLength;
+	private static int[] speciesToOutput;
 	private static int[] populations;
-	
+	private static String[] reactionDefinitions;
+
 	private static final String INPUT_SEPARATOR = " ";
-	
-	private static boolean parseInputFile(String inputFilePath) throws Exception {
+
+	private static boolean parseInputFile(String inputFilePath)
+			throws Exception {
 		/**
 		 * Input read the input file
 		 */
@@ -67,7 +71,8 @@ public class P1 {
 
 		// Verify that enough populations are provided
 		if (populationInput.length < numSpecies) {
-			log.error("Line 1, Not enough population values provided");
+			log.error("Line 1: Not enough population values provided. Expecting "
+					+ numSpecies);
 			return false;
 		}
 
@@ -85,30 +90,33 @@ public class P1 {
 			log.error("Missing line 2");
 			return false;
 		}
-		String[] indicesInput = line.split(INPUT_SEPARATOR);
+
+		String[] chemicalSpeciesInput = line.split(INPUT_SEPARATOR);
 
 		// Verify that enough indices have been provided
-		if (indicesInput.length < numChemicalSpecies) {
-			log.error("Line 2, Not enough indices provided");
+		if (chemicalSpeciesInput.length < numChemicalSpecies) {
+			log.error("Line 2: Not enough indices provided");
 			return false;
 		}
 
+		speciesToOutput = new int[numChemicalSpecies];
 		for (int i = 0; i < numChemicalSpecies; i++) {
-			log.info("Output Species: S" + indicesInput[i]);
+			log.info("Will output Species, S" + chemicalSpeciesInput[i]);
+			speciesToOutput[i] = Integer.valueOf(chemicalSpeciesInput[i]);
 		}
 
 		/**
-		 * Line 4-(numReactions+4): Reactions
+		 * Line 4 to Line (numReactions+4): Reactions
 		 */
-		simulation.setNumberOfReactions(numReactions);
-		
-		for (int reactionId = 0; reactionId < numReactions; reactionId++) {
+		reactionDefinitions = new String[numReactions];
+		for (int i = 0; i < numReactions; i++) {
 			line = inputBuffer.readLine();
 			if (line == null) {
-				log.error("Missing an reaction #" + reactionId);
+				log.error("Line " + (4 + i) + ": Missing reaction " + i
+						+ ". Expecting " + (numReactions - i) + " reactions.");
 				return false;
 			}
-			simulation.addReaction(reactionId, line);
+			reactionDefinitions[i] = line;
 		}
 
 		return true;
@@ -117,39 +125,48 @@ public class P1 {
 	public static void main(String[] args) {
 
 		log.entry("main");
-		
+
 		if (args.length < 1) {
 			log.error("Input file not specified.");
 			return;
 		}
 		String inputFilePath = args[0];
-		
+
 		boolean parseSuccess = false;
-		
+
 		try {
 			parseSuccess = parseInputFile(inputFilePath);
+			
+			/*
+			 * Create simulation
+			 */
+			Simulation simulation = new Simulation(simulationLength, populations,
+					reactionDefinitions, speciesToOutput);
+
+			/*
+			 * Run simulation
+			 */
+			simulation.run();
+			
+			
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 			parseSuccess = false;
-			return;
 		} catch (IOException e) {
 			e.printStackTrace();
 			parseSuccess = false;
-			return;
 		} catch (Exception e) {
 			e.printStackTrace();
 			parseSuccess = false;
 		}
-		
-		if(!parseSuccess){
+
+		if (!parseSuccess) {
+			log.error("Failed to start simulation");
 			return;
 		}
+
 		
-		/*
-		 * Run the simulation
-		 */
-		
-		
+
 		log.info("Completed");
 		log.exit();
 	}

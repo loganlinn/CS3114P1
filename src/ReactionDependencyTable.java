@@ -1,7 +1,9 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -60,24 +62,28 @@ public class ReactionDependencyTable {
 				
 			}
 		}
-		
+
 		/*
 		 * Map reactions to reactions which are dependent
 		 */
 		int reactionId; // Temporary reaction id used within loop
+		
+		// Define a list to hold all dependent reactions
+		// Linked list under assumption each reaction is not dependent on more than half of all reactions
 		LinkedList<Simulation.Reaction> dependentReactionsList = new LinkedList<Simulation.Reaction>();
+		
 		
 		// Loop through all reactions looking at their product species
 		// Get reaction's product species
 		// For each product species, get reactions
 		// Map all product species' reactions to this reaction
 		//		Avoid duplicates via taking intersection of all reaction lists
-		HashSet<Simulation.Reaction> reactionSet;
+		
+		List<Integer> dependentReactionsFound = new ArrayList<Integer>(reactions.length);
 		
 		for(Simulation.Reaction reaction : reactions){
 			
 			reactionId = reaction.getReactionId();
-			
 			
 			// Use linked list to collect all reactions, ignore duplicate references
 			for(ReactionTerm product : reaction.getProductTerms()){
@@ -86,17 +92,27 @@ public class ReactionDependencyTable {
 				// Get the map from species -> reactions
 				speciesReactions = speciesToReactionMap.get(speciesId);
 				
-				dependentReactionsList.addAll(speciesReactions);
+				// Continue if there are no reactions with this species as a reactant
+				if(speciesReactions == null){
+					continue;
+				}
+				
+				// All the reactions to the list, but only if we have not already added it
+				for(Simulation.Reaction dependentReaction : speciesReactions){
+					if(dependentReaction != reaction && !dependentReactionsFound.contains(dependentReaction.getReactionId())){
+						dependentReactionsList.add(dependentReaction);
+					}
+				}
 				
 			}
-			
-			// Reduce list of all reactions into set containing no duplicate reactions
-			reactionSet = new HashSet<Simulation.Reaction>(dependentReactionsList);
-			
+
 			// Store the reduced set
-			reactionTable.put(reactionId, (Simulation.Reaction[]) reactionSet.toArray());
+			Simulation.Reaction[] finalDependentRections = new Simulation.Reaction[dependentReactionsList.size()];
+			finalDependentRections = dependentReactionsList.toArray(finalDependentRections);
+			reactionTable.put(reactionId, finalDependentRections);
 			
 			// Clear the list of dependent reactions for the next reaction
+			dependentReactionsFound.clear();
 			dependentReactionsList.clear();
 		}
 		
@@ -116,6 +132,14 @@ public class ReactionDependencyTable {
 	 * Expensive! For debugging purposes
 	 */
 	public String toString(){
-		return "";
+		StringBuffer sb = new StringBuffer();
+		for(Map.Entry<Integer, Simulation.Reaction[]> entry: reactionTable.entrySet()){
+			sb.append("R"+entry.getKey()+" -> {");
+			for(Simulation.Reaction r : entry.getValue()){
+				sb.append("R"+r.getReactionId()+", ");
+			}
+			sb.append("}\n");
+		}
+		return sb.toString();
 	}
 }

@@ -1,7 +1,6 @@
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Stack;
 import java.util.StringTokenizer;
 
 /**
@@ -17,6 +16,7 @@ public class Simulation {
 	private ReactionHeap reactionHeap;
 	private int[] populations;
 	private Reaction[] reactions;
+	private int[] speciesToOutput;
 
 	/**
 	 * Simulation Reaction class Uses a HashMap to store the reaction's terms
@@ -27,12 +27,13 @@ public class Simulation {
 	 * @author loganlinn
 	 * 
 	 */
-	public class Reaction {
+	public class Reaction implements Comparable<Reaction> {
 		private final HashMap<Integer, ReactionTerm> reactants = new HashMap<Integer, ReactionTerm>();
 		private final HashMap<Integer, ReactionTerm> products = new HashMap<Integer, ReactionTerm>();
 		private double reactionRate;
 		private double propensity;
 		private final int reactionId;
+		private double tau;
 
 		private static final String REACTANT_PRODUCT_SEPARATOR = "->";
 		private static final String NULL_SEPARATOR = " ";
@@ -58,6 +59,7 @@ public class Simulation {
 			// Parse the reaction text
 			parse(reactionText);
 			updatePropensity();
+			log.info("New Reaction: " + this.toString());
 		}
 
 		/**
@@ -155,7 +157,6 @@ public class Simulation {
 				throw new Exception("Invalid reaction syntax: " + reactionText);
 			}
 
-			log.info("New Reaction:" + this.toString());
 		}
 
 		/**
@@ -167,7 +168,7 @@ public class Simulation {
 				incrementPopulation(reactionTerm.getSpeciesId(),
 						-reactionTerm.getCoefficient());
 			}
-			
+
 			// Increment the reactant species' populations
 			for (ReactionTerm reactionTerm : getProducts().values()) {
 				incrementPopulation(reactionTerm.getSpeciesId(),
@@ -176,50 +177,64 @@ public class Simulation {
 		}
 
 		/**
-		 * Get's the reaction's propensity using the simulations accessor methods
+		 * Get's the reaction's propensity methods
 		 * 
 		 * @return
 		 */
 		public void updatePropensity() {
 			double propensity = getReactionRate();
+			Stack<Integer> s = new Stack<Integer>();
 			for (ReactionTerm reactantTerm : getReactants().values()) {
-				propensity *= getPopulation(reactantTerm.getSpeciesId());
+				// Handle when the same species occurs multiple times on one
+				// side of reaction ie) S1+S1->S2
+				int termCoefficient = reactantTerm.getCoefficient();
+				while (termCoefficient-- > 0) {
+					propensity *= getPopulation(reactantTerm.getSpeciesId())
+							- termCoefficient;
+					s.push(getPopulation(reactantTerm.getSpeciesId())
+							- termCoefficient);
+				}
 			}
 			setPropensity(propensity);
+			generateTau();
 		}
-		
+
 		/**
-		 * Calculate an offset of time for this reaction to fire again based off of current propensity
-		 * Normally called after calling updatePropensity()
+		 * Calculate an offset of time for this reaction to fire again based off
+		 * of current propensity Normally called after calling
+		 * updatePropensity()
+		 * 
 		 * @param propensity
 		 * @return
 		 */
-		public double generateTau() {
+		public void generateTau() {
 			double propensity = getPropensity();
-			if (propensity == 0){
-				return totalTime + 1; // A big time
+			if (propensity == 0) {
+				setTau(totalTime + 1); // A big time
 			}
 			double r = Math.random(); // Generate a random number
-			return (-Math.log(r) / propensity);
+			setTau(-Math.log(r) / propensity);
 		}
-		
+
 		/**
 		 * Object's toString format for debugging purposes
 		 */
 		public String toString() {
 			StringBuffer sb = new StringBuffer();
+			sb.append("R" + reactionId + ":" + NULL_SEPARATOR);
 			for (ReactionTerm reactionTerm : getReactants().values()) {
 				sb.append(reactionTerm.getCoefficient());
 				sb.append(SPECIES_TOKEN);
 				sb.append(reactionTerm.getSpeciesId());
 			}
 			sb.append(NULL_SEPARATOR + REACTANT_PRODUCT_SEPARATOR
-					+ NULL_SEPARATOR);
+					+ NULL_SEPARATOR + getReactionRate() + NULL_SEPARATOR);
 			for (ReactionTerm reactionTerm : getProducts().values()) {
 				sb.append(reactionTerm.getCoefficient());
 				sb.append(SPECIES_TOKEN);
 				sb.append(reactionTerm.getSpeciesId());
 			}
+			sb.append(" [" + getPropensity() + "]");
 			return sb.toString();
 		}
 
@@ -262,6 +277,44 @@ public class Simulation {
 			}
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		public boolean equals(Reaction reaction) {
+			return getReactionId() == reaction.getReactionId();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			// Cast object to Reaction and use other equals method
+			// Currently, there is no need to check instance of Reaction
+			return equals((Reaction) obj);
+		}
+
+		/**
+		 * Used for priority queue
+		 */
+		@Override
+		public int compareTo(Reaction otherReaction) {
+			double tau = getTau();
+			double otherTau = otherReaction.getTau();
+			if (tau == otherTau) {
+				return 0;
+			} else if (tau < otherTau) {
+				return -1;
+			} else {
+				return 1;
+			}
+		}
+
+		// ------------ Standard getters & setters -------------------
 		/**
 		 * 
 		 * @return the ReactionTerms of the reaction's reactants
@@ -314,27 +367,6 @@ public class Simulation {
 			return reactionId;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		public boolean equals(Reaction reaction) {
-			return getReactionId() == reaction.getReactionId();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(Object obj) {
-			// Cast object to Reaction and use other equals method
-			// Currently, there is no need to check instance of Reaction
-			return equals((Reaction) obj);
-		}
-
 		/**
 		 * @return the propensity
 		 */
@@ -343,10 +375,26 @@ public class Simulation {
 		}
 
 		/**
-		 * @param propensity the propensity to set
+		 * @param propensity
+		 *            the propensity to set
 		 */
 		public void setPropensity(double propensity) {
 			this.propensity = propensity;
+		}
+
+		/**
+		 * @return the tau
+		 */
+		public double getTau() {
+			return tau;
+		}
+
+		/**
+		 * @param tau
+		 *            the tau to set
+		 */
+		public void setTau(double tau) {
+			this.tau = tau;
 		}
 
 	}
@@ -354,78 +402,77 @@ public class Simulation {
 	// ---------- END Simulation.Reaction -------------
 
 	/**
-	 * Simulation ojbect constructor
-	 */
-	public Simulation() {
-
-	}
-
-	/**
+	 * Simulation constructor
 	 * 
-	 * @param numReactions
+	 * @throws Exception
+	 * @throws NumberFormatException
 	 */
-	public void setNumberOfReactions(int numReactions) {
-		reactions = new Simulation.Reaction[numReactions];
-
-	}
-
-	public void addReaction(int reactionId, String reactionText)
-			throws Exception {
-		reactions[reactionId] = new Simulation.Reaction(reactionId,
-				reactionText);
-	}
-
-	public void createReactionDependancyTable() {
-
-	}
-
-	public boolean isReady() {
-		if (reactions == null) {
-			return false;
-		} else if (reactionDependencies == null) {
-			return false;
-		} else if (reactionHeap == null) {
-			return false;
-		} else if (populations == null) {
-			return false;
+	public Simulation(int simulationLength, int[] populations,
+			String[] reactionDefinitions, int[] speciesToOutput)
+			throws NumberFormatException, Exception {
+		/*
+		 * Store simulation parameters
+		 */
+		setTotalTime(simulationLength);
+		setPopulations(populations);
+		setSpeciesToOutput(speciesToOutput);
+		
+		/*
+		 * Create reactions from reaction definitions
+		 */
+		int numReactions = reactionDefinitions.length;
+		reactions = new Reaction[numReactions];
+		for (int i = 0; i < numReactions; i++) {
+			reactions[i] = new Reaction(i, reactionDefinitions[i]);
 		}
-		return true;
+
+		/*
+		 * Create reaction dependency table
+		 */
+		reactionDependencies = new ReactionDependencyTable(reactions);
+		System.out.println(reactionDependencies);
+
+		/*
+		 * Create heap
+		 */
+		reactionHeap = new ReactionHeap(this);
+
+		System.out.println(reactionHeap);
 	}
 
 	/**
 	 * Runs the simulation
 	 */
 	public void run() {
-
-		if (!isReady()) {
-			return;
-		}
-		Reaction reaction;
-		Reaction[] dependentReactions;
-		double tau;
-		int reactionId;
-		double propensity;
-		double reactionTau;
+		log.info("Starting Simulation");
+		logPopulations();
+		/*
+		 * Define simulation loop variables
+		 */
+		Reaction reaction; // Current firing reaction
+		Reaction[] dependentReactions; // Reactions dependent current reaction
+		int reactionId; // Temporary holder for current reaction's ID
 
 		/*
-		 * Main simulation loop
+		 * Run the main simulation loop
 		 */
 		while (totalTime > currentTime) {
 			/*
 			 * 1) Pick next reaction to fire
 			 */
 			reactionId = reactionHeap.getNextReactionId();
-
+			reaction = reactions[reactionId];
+			
+			
 			/*
 			 * 2) Update simulation clock from reaction time
 			 */
-			tau = reactionHeap.getNextReactionTime();
-			stepTime(tau);
+			stepTime(reaction.getTau());
 
 			/*
 			 * 3) Update populations
 			 */
-			reaction = reactions[reactionId];
+			log.info("t="+currentTime+", firing R"+reactionId);
 			reaction.fire();
 
 			/*
@@ -433,66 +480,38 @@ public class Simulation {
 			 * dependent reactions 5) Setup next fire time
 			 */
 			reaction.updatePropensity();
-			dependentReactions = reactionDependencies.getDependentReactions(reaction);
-			reactionHeap.setNextReactionTime(reaction.getReactionId(), reaction.generateTau());
-			for(Reaction dependentReaction : dependentReactions){
+			dependentReactions = reactionDependencies
+					.getDependentReactions(reaction);
+//			reactionHeap.setNextReactionTime(reaction.getReactionId(),
+//					reaction.getTau());
+			reactionHeap.updateReaction(reaction);
+			
+			for (Reaction dependentReaction : dependentReactions) {
 				dependentReaction.updatePropensity();
-				reactionHeap.setNextReactionTime(dependentReaction.getReactionId(), dependentReaction.generateTau());
+
+				// Put the new tau's into queue
+//				reactionHeap.setNextReactionTime(
+//						dependentReaction.getReactionId(),
+//						dependentReaction.getTau());
+				reactionHeap.updateReaction(dependentReaction);
 			}
 			
-//			propensity = reaction.getReactionRate(); // Start propensity with
-//														// constant, then
-//														// multiply by each
-//														// species' population
-//														// in the reactant
-//			List<Integer> dependentReactionIds = new LinkedList<Integer>();
-//			for (ReactionTerm reactionTerm : reaction.getReactantTerms()) {
-//
-//				int speciesId = reactionTerm.getSpeciesId();
-//				// Handle when the same species occurs multiple times on one
-//				// side of reaction ie) S1+S1->S2
-//				int termCoefficient = reactionTerm.getCoefficient();
-//				while (termCoefficient-- > 0) {
-//					propensity *= populations[speciesId] - termCoefficient;
-//				}
-//
-//				dependentReactionIds.addAll(reactionDependencies
-//						.getDependentReactions(speciesId));
-//			}
-//			Reaction dependentReaction;
-//			reactionTau = nextTau(propensity);
-//			reactionHeap.setNextReactionTime(reactionId, reactionTau);
-//
-//			/*
-//			 * Update dependent propensities in heap
-//			 */
-//			for (Integer dependentReactionId : dependentReactionIds) {
-//				dependentReaction = reactions[dependentReactionId];
-//				// Start propensity with constant, then multiply by each
-//				// species' population in the reactant
-//				propensity = dependentReaction.getReactionRate();
-//
-//				for (ReactionTerm reactionTerm : reaction.getReactantTerms()) {
-//					int speciesId = reactionTerm.getSpeciesId();
-//
-//					// Handle when the same species occurs multiple times on one
-//					// side of reaction ie) S1+S1->S2
-//					int termCoefficient = reactionTerm.getCoefficient();
-//					while (termCoefficient-- > 0) {
-//						propensity *= populations[speciesId] - termCoefficient;
-//					}
-//				}
-//
-//				reactionTau = nextTau(propensity);
-//				reactionHeap.setNextReactionTime(dependentReactionId,
-//						reactionTau);
-//			}
+//			System.out.println(reactionHeap);
+			
+			logPopulations();
 
 		}
 	}
-
+	
+	private void logPopulations(){
+		for(int i = 0; i < populations.length; i++){
+			log.info("x"+(i+1)+" = "+populations[i]);
+		}
+	}
+	
 	/**
 	 * Steps simulations current to by an tau value
+	 * 
 	 * @param tau
 	 */
 	public void stepTime(double tau) {
@@ -530,7 +549,7 @@ public class Simulation {
 	}
 
 	/**
-	 * Gets the population for a specific species
+	 * Gets the population for a specific species. Subtract 1 from index b/c stored in 0-based array
 	 * 
 	 * @param speciesId
 	 * @return
@@ -539,7 +558,7 @@ public class Simulation {
 		if (speciesId < 0 || speciesId >= populations.length) {
 			return 0;
 		}
-		return populations[speciesId];
+		return populations[speciesId-1];
 	}
 
 	/**
@@ -568,6 +587,36 @@ public class Simulation {
 	 */
 	private void setPopulations(int[] populations) {
 		this.populations = populations;
+	}
+
+	/**
+	 * @return the reactions
+	 */
+	public Reaction[] getReactions() {
+		return reactions;
+	}
+
+	/**
+	 * @param reactions
+	 *            the reactions to set
+	 */
+	public void setReactions(Reaction[] reactions) {
+		this.reactions = reactions;
+	}
+
+	/**
+	 * @return the speciesToOutput
+	 */
+	public int[] getSpeciesToOutput() {
+		return speciesToOutput;
+	}
+
+	/**
+	 * @param speciesToOutput
+	 *            the speciesToOutput to set
+	 */
+	public void setSpeciesToOutput(int[] speciesToOutput) {
+		this.speciesToOutput = speciesToOutput;
 	}
 
 }

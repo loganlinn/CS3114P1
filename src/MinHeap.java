@@ -1,5 +1,5 @@
 /**
  */
-public class MinHeap {
+public class MinHeap<E> {
 
 }
