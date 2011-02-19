@@ -151,7 +151,9 @@ public class P1 {
 			log.error("Input file not specified.");
 			return;
 		}
-		String inputFilePath = args[0];
+		Integer numSimulations = Integer.parseInt(args[0]);
+		String inputFilePath = args[1];
+		String outputFilePath = args[2];
 
 		boolean parseSuccess = false;
 
@@ -167,8 +169,14 @@ public class P1 {
 			/*
 			 * Run simulation
 			 */
+			while(numSimulations > 0) {
 			simulation.run();
-			
+			numSimulations--;
+			simulation.resetSimulation(simulationLength,
+					populations, speciesToOutput);
+			}
+			//simulation.reset();
+			//reset values in constructor and then the simulation can be run again.
 			
 		} catch (NumberFormatException e) {
 			e.printStackTrace();

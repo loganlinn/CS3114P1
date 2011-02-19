@@ -1,5 +1,5 @@
 /**
  */
 public class MinHeap<E> {
-
+	
 }

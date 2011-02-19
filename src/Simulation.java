@@ -509,6 +509,17 @@ public class Simulation {
 		logPopulations();
 	}
 	
+	public void resetSimulation(int simulationLength,
+			int[] populations, int[] speciesToOutput) {
+		setTotalTime(simulationLength);
+		setPopulations(populations);
+		setSpeciesToOutput(speciesToOutput);
+		
+		reactionHeap = new ReactionHeap(this);
+		
+		System.out.println(reactionHeap);
+	}
+	
 	private void logPopulations(){
 		for(int i = 0; i < populations.length; i++){
 			log.info("x"+(i+1)+" = "+populations[i]);
