@@ -23,7 +23,13 @@ public class P1 {
 	private static String[] reactionDefinitions;
 
 	private static final String INPUT_SEPARATOR = " ";
-
+	
+	
+	private static final int LINE0_MIN_ARGS = 4;
+	private static final int LINE0_NUM_SPECIES = 0;
+	private static final int LINE0_NUM_REACTIONS = 1;
+	private static final int LINE0_SPECIES_TO_OUTPUT = 2;
+	private static final int LINE0_SIMULATION_LENGTH = 3;
 	private static boolean parseInputFile(String inputFilePath)
 			throws Exception {
 		/**
@@ -46,14 +52,14 @@ public class P1 {
 		}
 
 		String[] simulationValues = line.split(INPUT_SEPARATOR);
-		if (simulationValues.length < 4) {
+		if (simulationValues.length < LINE0_MIN_ARGS) {
 			System.err.println("Line 0 requires 4 values");
 			return false;
 		}
-		numSpecies = Integer.parseInt(simulationValues[0]);
-		numReactions = Integer.parseInt(simulationValues[1]);
-		numChemicalSpecies = Integer.parseInt(simulationValues[2]);
-		simulationLength = Integer.parseInt(simulationValues[3]);
+		numSpecies = Integer.parseInt(simulationValues[LINE0_NUM_SPECIES]);
+		numReactions = Integer.parseInt(simulationValues[LINE0_NUM_REACTIONS]);
+		numChemicalSpecies = Integer.parseInt(simulationValues[LINE0_SPECIES_TO_OUTPUT]);
+		simulationLength = Integer.parseInt(simulationValues[LINE0_SIMULATION_LENGTH]);
 
 		/**
 		 * Line 1: Initial Populations Format: x y z ...
@@ -183,7 +189,7 @@ public class P1 {
 		}
 
 		if (!parseSuccess) {
-			System.err.println("Failed to start simulation");
+			System.err.println("Project 1 exited with errors");
 			return;
 		}
 
