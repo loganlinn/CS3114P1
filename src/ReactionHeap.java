@@ -7,7 +7,7 @@ import java.util.PriorityQueue;
  * @author loganlinn
  * 
  */
-public class ReactionHeap extends MinHeap<Simulation.Reaction> {
+public class ReactionHeap {
 	 private Simulation simulation;
 	private final PriorityQueue<Simulation.Reaction> queue;
 
