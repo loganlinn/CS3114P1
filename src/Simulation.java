@@ -1,23 +1,29 @@
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
 /**
+ * Main simulation class
  * 
  * @author loganlinn
  * 
  */
 public class Simulation {
-	private static final Log log = new Log(Simulation.class);
 	private double currentTime;
 	private int totalTime;
 	private ReactionDependencyTable reactionDependencies;
 	private ReactionHeap reactionHeap;
 	private int[] populations;
 	private Reaction[] reactions;
-	private int[] speciesToOutput;
-
+	private ArrayList<Integer> speciesToOutput;
+	private SimulationOutput simulationOutput;
+	private int runCount = 0;
+	private int[] speciesAverages;
+	private ArrayList<int[]> speciesPopulations;
+	
 	/**
 	 * Simulation Reaction class Uses a HashMap to store the reaction's terms
 	 * with the species ID as the entry key. This allows faster access to
@@ -34,6 +40,7 @@ public class Simulation {
 		private double propensity;
 		private final int reactionId;
 		private double tau;
+		private long fireCount = 0;
 
 		private static final String REACTANT_PRODUCT_SEPARATOR = "->";
 		private static final String NULL_SEPARATOR = " ";
@@ -59,7 +66,6 @@ public class Simulation {
 			// Parse the reaction text
 			parse(reactionText);
 			updatePropensity();
-			log.info("New Reaction: " + this.toString());
 		}
 
 		/**
@@ -160,20 +166,44 @@ public class Simulation {
 		}
 
 		/**
-		 * Fire the reaction
+		 * Fires the reaction.
+		 * Decrements reactant species' populations by the coefficient value
+		 * Increments product species' populations by the coefficient value
+		 * 
+		 * Increments the fired counter
+		 * Checks to see if an affected species population should be outputted
 		 */
 		public void fire() {
+			boolean notifyOutput = false;
+			int speciesId; // Temporary variable for species Id
 			// Decrement the reactant species' populations
 			for (ReactionTerm reactionTerm : getReactants().values()) {
-				incrementPopulation(reactionTerm.getSpeciesId(),
+				speciesId = reactionTerm.getSpeciesId();
+				incrementPopulation(speciesId,
 						-reactionTerm.getCoefficient());
+				if(speciesToOutput.contains(Integer.valueOf(speciesId))){
+					notifyOutput = true;
+				}
 			}
 
 			// Increment the reactant species' populations
 			for (ReactionTerm reactionTerm : getProducts().values()) {
-				incrementPopulation(reactionTerm.getSpeciesId(),
+				speciesId = reactionTerm.getSpeciesId();
+				incrementPopulation(speciesId,
 						reactionTerm.getCoefficient());
+				if(!notifyOutput && speciesToOutput.contains(Integer.valueOf(speciesId))){
+					notifyOutput = true;
+				}
 			}
+
+			// Notify output helper if we need to
+			if(notifyOutput){
+				simulationOutput.populationChanged();
+			}
+			
+			// Increment the counter
+			fireCount++;
+			
 		}
 
 		/**
@@ -402,6 +432,28 @@ public class Simulation {
 			this.tau = tau - tau2;
 		}
 
+		/**
+		 * Reset any values that need to be between simulations
+		 */
+		public void reset() {
+			setFireCount(0);
+		}
+
+		/**
+		 * @return the fireCount
+		 */
+		public long getFireCount() {
+			return fireCount;
+		}
+
+		/**
+		 * @param fireCount
+		 *            the fireCount to set
+		 */
+		public void setFireCount(long fireCount) {
+			this.fireCount = fireCount;
+		}
+
 	}
 
 	// ---------- END Simulation.Reaction -------------
@@ -413,14 +465,24 @@ public class Simulation {
 	 * @throws NumberFormatException
 	 */
 	public Simulation(int simulationLength, int[] populations,
-			String[] reactionDefinitions, int[] speciesToOutput)
-			throws NumberFormatException, Exception {
+			String[] reactionDefinitions, int[] speciesToOutput,
+			String outputFilePath) throws NumberFormatException, Exception {
+
+		simulationOutput = new SimulationOutput(this, outputFilePath);
+
 		/*
 		 * Store simulation parameters
 		 */
 		setTotalTime(simulationLength);
 		setPopulations(populations);
-		setSpeciesToOutput(speciesToOutput);
+		
+		//Put species to output into ArrayList to make it easier to determine if a watched species' population changed
+		ArrayList<Integer> speciesToOutputList = new ArrayList<Integer>(speciesToOutput.length);
+		for(int species : speciesToOutput){
+			speciesToOutputList.add(species);
+		}
+		setSpeciesToOutput(speciesToOutputList);
+		speciesPopulations = new ArrayList<int[]>();
 		
 		/*
 		 * Create reactions from reaction definitions
@@ -435,22 +497,30 @@ public class Simulation {
 		 * Create reaction dependency table
 		 */
 		reactionDependencies = new ReactionDependencyTable(reactions);
-		System.out.println(reactionDependencies);
 
 		/*
 		 * Create heap
 		 */
 		reactionHeap = new ReactionHeap(this);
-
-		System.out.println(reactionHeap);
 	}
-
+	
+	/**
+	 * Stores populations for the species to output
+	 */
+	public void storeSpeciesPopulations(){
+		int numSpecies = speciesToOutput.size();
+		int[] populations = new int[numSpecies];
+		for(int i = 0; i < numSpecies; i++){
+			populations[i] = getPopulation(speciesToOutput.get(i));
+		}
+		speciesPopulations.add(populations);
+	}
+	
 	/**
 	 * Runs the simulation
 	 */
 	public void run() {
-		log.info("Starting Simulation");
-		logPopulations();
+
 		/*
 		 * Define simulation loop variables
 		 */
@@ -465,10 +535,10 @@ public class Simulation {
 			/*
 			 * 1) Pick next reaction to fire
 			 */
-			
+
 			reaction = reactionHeap.getNextReaction();
 			reactionId = reaction.getReactionId();
-			
+
 			/*
 			 * 2) Update simulation clock from reaction time
 			 */
@@ -477,9 +547,8 @@ public class Simulation {
 			/*
 			 * 3) Update populations
 			 */
-			if(reactionId == 3) log.info("t="+currentTime+", firing R"+reactionId);
 			reaction.fire();
-
+			
 			/*
 			 * 4) Calculate propensities for reaction that just fired and all
 			 * dependent reactions 5) Setup next fire time
@@ -487,45 +556,136 @@ public class Simulation {
 			reaction.updatePropensity();
 			dependentReactions = reactionDependencies
 					.getDependentReactions(reaction);
-//			reactionHeap.setNextReactionTime(reaction.getReactionId(),
-//					reaction.getTau());
+
 			reactionHeap.updateReaction(reaction);
-			
+
 			for (Reaction dependentReaction : dependentReactions) {
 				dependentReaction.updatePropensity();
-
-				// Put the new tau's into queue
-//				reactionHeap.setNextReactionTime(
-//						dependentReaction.getReactionId(),
-//						dependentReaction.getTau());
+				
+				// Notify the heap this reaction's propensity/tau has changed
 				reactionHeap.updateReaction(dependentReaction);
 			}
-			
-//			System.out.println(reactionHeap);
-			
-			
-
 		}
-		logPopulations();
+		simulationOutput.simulationComplete();
+		storeSpeciesPopulations();
+	}
+
+	/**
+	 * Gets the current populations of the watched species
+	 * 
+	 * @return
+	 */
+	public int[] getPopulationsToOutput() {
+		int numSpecies = speciesToOutput.size();
+		int[] populations = new int[numSpecies];
+		for (int i = 0; i < numSpecies; i++) {
+			populations[i] = getPopulation(speciesToOutput.get(i));
+		}
+		return populations;
 	}
 	
-	public void resetSimulation(int simulationLength,
-			int[] populations, int[] speciesToOutput) {
+	/**
+	 * 
+	 * @return
+	 */
+	public long[] getReactionFireCounts() {
+		int numReactions = reactions.length;
+		long[] counts = new long[numReactions];
+		for (int i = 0; i < numReactions; i++) {
+			counts[i] = reactions[i].getFireCount();
+		}
+		return counts;
+	}
+
+	public void finalize(){
+		/*
+		 * Calculate mean
+		 */
+		int numSpecies = speciesToOutput.size();
+		int numRuns = speciesPopulations.size();
+		Integer[] means = new Integer[numSpecies];
+		for(int i = 0; i < numSpecies; i++){
+			means[i] = 0;
+		}
+		for(int runIndex = 0; runIndex < speciesPopulations.size(); runIndex++){
+			int[] populations = speciesPopulations.get(runIndex);
+			for(int speciesIndex = 0; speciesIndex < numSpecies; speciesIndex++){
+				means[speciesIndex] = means[speciesIndex] + populations[speciesIndex];
+			}
+		}
+		
+		for(int speciesIndex = 0; speciesIndex < means.length; speciesIndex++){
+			means[speciesIndex] = means[speciesIndex]/numRuns;
+		}
+		
+		//Output means
+		StringBuffer meanStr = new StringBuffer();
+		for(Integer mean: means){
+			meanStr.append(mean.toString()+SimulationOutput.DELIMITER);
+		}
+		System.out.println(meanStr.toString());
+		simulationOutput.writeln(meanStr.toString());
+		
+		
+		/*
+		 * Calculate variance
+		 */
+		Integer[] variances = new Integer[numSpecies];
+		for(int i = 0; i < numSpecies; i++){
+			variances[i] = 0;
+		}
+		for(int runIndex = 0; runIndex < speciesPopulations.size(); runIndex++){
+			int[] populations = speciesPopulations.get(runIndex);
+			for(int speciesIndex = 0; speciesIndex < numSpecies; speciesIndex++){
+				variances[speciesIndex] = (int) (variances[speciesIndex] + Math.pow(populations[speciesIndex] - means[speciesIndex], 2));
+			}
+		}
+		
+		for(int speciesIndex = 0; speciesIndex < numSpecies; speciesIndex++){
+			variances[speciesIndex] = variances[speciesIndex]/numRuns;
+		}
+		//Output variance
+		StringBuffer varianceStr = new StringBuffer();
+		for(Integer variance: variances){
+			varianceStr.append(variance.toString()+SimulationOutput.DELIMITER);
+		}
+		
+		System.out.println(varianceStr.toString());
+		simulationOutput.writeln(varianceStr.toString());
+		
+		simulationOutput.closeOutput();
+	}
+	public void printArray(Integer[] a){
+		System.out.print("[");
+		for(Integer i:a){
+			System.out.print(i+", ");
+		}
+		System.out.println("]");
+	
+	}
+	/**
+	 * Resets the simulation
+	 * 
+	 * @param simulationLength
+	 * @param populations
+	 * @param speciesToOutput
+	 */
+	public void resetSimulation(int simulationLength, int[] populations,
+			int[] speciesToOutput) {
+		setCurrentTime(0);
 		setTotalTime(simulationLength);
 		setPopulations(populations);
-		setSpeciesToOutput(speciesToOutput);
 		
+		// Create heap
 		reactionHeap = new ReactionHeap(this);
-		
-		System.out.println(reactionHeap);
-	}
-	
-	private void logPopulations(){
-		for(int i = 0; i < populations.length; i++){
-			log.info("x"+(i+1)+" = "+populations[i]);
+
+		// Reset reactions (fire count)
+		for (Simulation.Reaction reaction : reactions) {
+			reaction.reset();
 		}
+
 	}
-	
+
 	/**
 	 * Steps simulations current to by an tau value
 	 * 
@@ -533,7 +693,7 @@ public class Simulation {
 	 */
 	public void stepTime(double tau) {
 		setCurrentTime(getCurrentTime() + tau);
-		for(Simulation.Reaction reaction : reactions){
+		for (Simulation.Reaction reaction : reactions) {
 			reaction.stepTau(tau);
 		}
 	}
@@ -569,16 +729,14 @@ public class Simulation {
 	}
 
 	/**
-	 * Gets the population for a specific species. Subtract 1 from index b/c stored in 0-based array
+	 * Gets the population for a specific species. Subtract 1 from index b/c
+	 * stored in 0-based array
 	 * 
 	 * @param speciesId
 	 * @return
 	 */
 	public int getPopulation(int speciesId) {
-		if (speciesId < 0 || speciesId >= populations.length) {
-			return 0;
-		}
-		return populations[speciesId-1];
+		return populations[speciesId - 1];
 	}
 
 	/**
@@ -588,7 +746,7 @@ public class Simulation {
 	 * @param population
 	 */
 	private void incrementPopulation(int speciesId, int step) {
-		populations[speciesId-1] = populations[speciesId-1] + step;
+		populations[speciesId - 1] = populations[speciesId - 1] + step;
 	}
 
 	/**
@@ -624,7 +782,7 @@ public class Simulation {
 	/**
 	 * @return the speciesToOutput
 	 */
-	public int[] getSpeciesToOutput() {
+	public ArrayList<Integer> getSpeciesToOutput() {
 		return speciesToOutput;
 	}
 
@@ -632,7 +790,7 @@ public class Simulation {
 	 * @param speciesToOutput
 	 *            the speciesToOutput to set
 	 */
-	public void setSpeciesToOutput(int[] speciesToOutput) {
+	public void setSpeciesToOutput(ArrayList<Integer> speciesToOutput) {
 		this.speciesToOutput = speciesToOutput;
 	}
 

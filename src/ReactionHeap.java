@@ -3,12 +3,16 @@ import java.util.Arrays;
 import java.util.PriorityQueue;
 
 /**
+ * This class is used to determine which reaction should fire next in the
+ * simulation. Once a reaction fires, it's propensity updates, and a new
+ * next-fire time is calculated. An instance of this class will keep a sorted
+ * list of reactions based on their next-fire time.
  * 
  * @author loganlinn
  * 
  */
 public class ReactionHeap {
-	 private Simulation simulation;
+	private Simulation simulation;
 	private final PriorityQueue<Simulation.Reaction> queue;
 
 	public ReactionHeap(Simulation simulation) {
@@ -17,7 +21,7 @@ public class ReactionHeap {
 				.getReactions()));
 	}
 
-	public void updateReaction(Simulation.Reaction reaction){
+	public void updateReaction(Simulation.Reaction reaction) {
 		queue.remove(reaction);
 		queue.add(reaction);
 	}
@@ -26,13 +30,14 @@ public class ReactionHeap {
 		Simulation.Reaction reaction = queue.remove();
 		return reaction;
 	}
-	
-	public void refresh(){
-		ArrayList<Simulation.Reaction> items = new ArrayList<Simulation.Reaction>(queue.size());
-		while(!queue.isEmpty()){
+
+	public void refresh() {
+		ArrayList<Simulation.Reaction> items = new ArrayList<Simulation.Reaction>(
+				queue.size());
+		while (!queue.isEmpty()) {
 			items.add(queue.remove());
 		}
-		while(!items.isEmpty()){
+		while (!items.isEmpty()) {
 			queue.add(items.get(0));
 		}
 	}

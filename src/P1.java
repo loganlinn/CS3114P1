@@ -14,7 +14,6 @@ public class P1 {
 	/**
 	 * Simulation variables
 	 */
-	private static final Log log = new Log(P1.class);
 	private static int numSpecies;
 	private static int numReactions;
 	private static int numChemicalSpecies;
@@ -42,36 +41,33 @@ public class P1 {
 		 */
 		line = inputBuffer.readLine();
 		if (line == null) {
-			log.error("Missing line 0");
+			System.err.println("Missing line 0");
 			return false;
 		}
 
 		String[] simulationValues = line.split(INPUT_SEPARATOR);
 		if (simulationValues.length < 4) {
-			log.error("Line 0 requires 4 values");
+			System.err.println("Line 0 requires 4 values");
 			return false;
 		}
 		numSpecies = Integer.parseInt(simulationValues[0]);
 		numReactions = Integer.parseInt(simulationValues[1]);
 		numChemicalSpecies = Integer.parseInt(simulationValues[2]);
 		simulationLength = Integer.parseInt(simulationValues[3]);
-		log.info("Species: " + numSpecies);
-		log.info("Reactions: " + numReactions);
-		log.info("Simulation Length: " + simulationLength);
 
 		/**
 		 * Line 1: Initial Populations Format: x y z ...
 		 */
 		line = inputBuffer.readLine();
 		if (line == null) {
-			log.error("Missing line 1");
+			System.err.println("Missing line 1");
 			return false;
 		}
 		String[] populationInput = line.split(INPUT_SEPARATOR);
 
 		// Verify that enough populations are provided
 		if (populationInput.length < numSpecies) {
-			log.error("Line 1: Not enough population values provided. Expecting "
+			System.err.println("Line 1: Not enough population values provided. Expecting "
 					+ numSpecies);
 			return false;
 		}
@@ -79,7 +75,6 @@ public class P1 {
 		populations = new int[numSpecies];
 		for (int i = 0; i < numSpecies; i++) {
 			populations[i] = Integer.parseInt(populationInput[i]);
-			log.info("Population: x" + i + " = " + populations[i]);
 		}
 
 		/**
@@ -87,7 +82,7 @@ public class P1 {
 		 */
 		line = inputBuffer.readLine();
 		if (line == null) {
-			log.error("Missing line 2");
+			System.err.println("Missing line 2");
 			return false;
 		}
 
@@ -95,13 +90,12 @@ public class P1 {
 
 		// Verify that enough indices have been provided
 		if (chemicalSpeciesInput.length < numChemicalSpecies) {
-			log.error("Line 2: Not enough indices provided");
+			System.err.println("Line 2: Not enough indices provided");
 			return false;
 		}
 
 		speciesToOutput = new int[numChemicalSpecies];
 		for (int i = 0; i < numChemicalSpecies; i++) {
-			log.info("Will output Species, S" + chemicalSpeciesInput[i]);
 			speciesToOutput[i] = Integer.valueOf(chemicalSpeciesInput[i]);
 		}
 
@@ -112,7 +106,7 @@ public class P1 {
 		for (int i = 0; i < numReactions; i++) {
 			line = inputBuffer.readLine();
 			if (line == null) {
-				log.error("Line " + (4 + i) + ": Missing reaction " + i
+				System.err.println("Line " + (4 + i) + ": Missing reaction " + i
 						+ ". Expecting " + (numReactions - i) + " reactions.");
 				return false;
 			}
@@ -125,32 +119,30 @@ public class P1 {
 	/*
 	 * On my honor:
 	 * 
-	 * -	I have not used source code obtained from another student,
-	 * 		or any other unauthorized source, either modified or
-	 * 		unmodified.
+	 * - I have not used source code obtained from another student, or any other
+	 * unauthorized source, either modified or unmodified.
 	 * 
-	 * -	All source code and documentation used in my program is
-	 * 		either my original, or was derived by me from the
-	 * 		source code published in the textbook for this course.
+	 * - All source code and documentation used in my program is either my
+	 * original, or was derived by me from the source code published in the
+	 * textbook for this course.
 	 * 
-	 * -	I have not discussed coding details about this project with
-	 * 		anyone other than my partner (in the case of a join
-	 * 		submission), instructor, ACM/UPE tutors or the TAs assigned
-	 * 		to this course. I understand that I  may discuss the concepts
-	 * 		of this program with other students, and that other students
-	 * 		may help me debug my program so long as neither of us writes
-	 * 		anything during the discussion or modifies any computer file
-	 * 		during the discussion. I have violated neither in the spirit nor
-	 * 		the letter of this restriction.
+	 * - I have not discussed coding details about this project with anyone
+	 * other than my partner (in the case of a join submission), instructor,
+	 * ACM/UPE tutors or the TAs assigned to this course. I understand that I
+	 * may discuss the concepts of this program with other students, and that
+	 * other students may help me debug my program so long as neither of us
+	 * writes anything during the discussion or modifies any computer file
+	 * during the discussion. I have violated neither in the spirit nor the
+	 * letter of this restriction.
 	 */
 	public static void main(String[] args) {
 
-		log.entry("main");
 
-		if (args.length < 1) {
-			log.error("Input file not specified.");
+		if (args.length < 3) {
+			System.err.println("Not enough arguments");
 			return;
 		}
+
 		Integer numSimulations = Integer.parseInt(args[0]);
 		String inputFilePath = args[1];
 		String outputFilePath = args[2];
@@ -159,25 +151,26 @@ public class P1 {
 
 		try {
 			parseSuccess = parseInputFile(inputFilePath);
-			
+
 			/*
 			 * Create simulation
 			 */
-			Simulation simulation = new Simulation(simulationLength, populations,
-					reactionDefinitions, speciesToOutput);
+			Simulation simulation = new Simulation(simulationLength,
+					populations, reactionDefinitions, speciesToOutput,
+					outputFilePath);
 
 			/*
 			 * Run simulation
 			 */
-			while(numSimulations > 0) {
-			simulation.run();
-			numSimulations--;
-			simulation.resetSimulation(simulationLength,
-					populations, speciesToOutput);
+			while (numSimulations > 0) {
+				simulation.run();
+				numSimulations--;
+				simulation.resetSimulation(simulationLength, populations,
+						speciesToOutput);
 			}
-			//simulation.reset();
-			//reset values in constructor and then the simulation can be run again.
 			
+			simulation.finalize();
+
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 			parseSuccess = false;
@@ -190,12 +183,10 @@ public class P1 {
 		}
 
 		if (!parseSuccess) {
-			log.error("Failed to start simulation");
+			System.err.println("Failed to start simulation");
 			return;
 		}
 
-		log.info("Execution Completed");
-		log.exit();
 	}
 
 }

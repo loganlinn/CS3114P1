@@ -1,4 +1,8 @@
-
+/**
+ * Represents a single term in a reaction
+ * @author loganlinn
+ *
+ */
 public class ReactionTerm {
 	private int speciesId;
 	private int coefficient;
