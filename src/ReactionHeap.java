@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 
@@ -20,19 +21,20 @@ public class ReactionHeap extends MinHeap<Simulation.Reaction> {
 		queue.remove(reaction);
 		queue.add(reaction);
 	}
+
+	public Simulation.Reaction getNextReaction() {
+		Simulation.Reaction reaction = queue.remove();
+		return reaction;
+	}
 	
-	public void setNextReactionTime(int reactionId, double reactionTau) {
-
-	}
-
-	public int getNextReactionId() {
-
-		return 0;
-	}
-
-	public double getNextReactionTime() {
-		// TODO:decrement all nodes by return value
-		return 0;
+	public void refresh(){
+		ArrayList<Simulation.Reaction> items = new ArrayList<Simulation.Reaction>(queue.size());
+		while(!queue.isEmpty()){
+			items.add(queue.remove());
+		}
+		while(!items.isEmpty()){
+			queue.add(items.get(0));
+		}
 	}
 
 	/**

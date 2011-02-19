@@ -397,6 +397,11 @@ public class Simulation {
 			this.tau = tau;
 		}
 
+		public void stepTau(double tau2) {
+			// TODO Auto-generated method stub
+			this.tau = tau - tau2;
+		}
+
 	}
 
 	// ---------- END Simulation.Reaction -------------
@@ -460,9 +465,9 @@ public class Simulation {
 			/*
 			 * 1) Pick next reaction to fire
 			 */
-			reactionId = reactionHeap.getNextReactionId();
-			reaction = reactions[reactionId];
 			
+			reaction = reactionHeap.getNextReaction();
+			reactionId = reaction.getReactionId();
 			
 			/*
 			 * 2) Update simulation clock from reaction time
@@ -472,7 +477,7 @@ public class Simulation {
 			/*
 			 * 3) Update populations
 			 */
-			log.info("t="+currentTime+", firing R"+reactionId);
+			if(reactionId == 3) log.info("t="+currentTime+", firing R"+reactionId);
 			reaction.fire();
 
 			/*
@@ -498,9 +503,10 @@ public class Simulation {
 			
 //			System.out.println(reactionHeap);
 			
-			logPopulations();
+			
 
 		}
+		logPopulations();
 	}
 	
 	private void logPopulations(){
@@ -516,6 +522,9 @@ public class Simulation {
 	 */
 	public void stepTime(double tau) {
 		setCurrentTime(getCurrentTime() + tau);
+		for(Simulation.Reaction reaction : reactions){
+			reaction.stepTau(tau);
+		}
 	}
 
 	/**
@@ -568,10 +577,7 @@ public class Simulation {
 	 * @param population
 	 */
 	private void incrementPopulation(int speciesId, int step) {
-		if (speciesId < 0 || speciesId >= populations.length) {
-			return;
-		}
-		populations[speciesId] = populations[speciesId] + step;
+		populations[speciesId-1] = populations[speciesId-1] + step;
 	}
 
 	/**

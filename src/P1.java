@@ -186,9 +186,7 @@ public class P1 {
 			return;
 		}
 
-		
-
-		log.info("Completed");
+		log.info("Execution Completed");
 		log.exit();
 	}
 
