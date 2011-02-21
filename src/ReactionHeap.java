@@ -45,6 +45,7 @@ public class ReactionHeap {
 	/**
 	 * Print out the reaction heap for debugging
 	 */
+	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		for (Simulation.Reaction reaction : queue) {

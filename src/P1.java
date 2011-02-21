@@ -175,7 +175,7 @@ public class P1 {
 						speciesToOutput);
 			}
 			
-			simulation.finalize();
+			simulation.finish();
 
 		} catch (NumberFormatException e) {
 			e.printStackTrace();

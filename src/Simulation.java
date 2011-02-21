@@ -1,5 +1,5 @@
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Stack;
@@ -248,6 +248,7 @@ public class Simulation {
 		/**
 		 * Object's toString format for debugging purposes
 		 */
+		@Override
 		public String toString() {
 			StringBuffer sb = new StringBuffer();
 			sb.append("R" + reactionId + ":" + NULL_SEPARATOR);
@@ -598,7 +599,7 @@ public class Simulation {
 		return counts;
 	}
 
-	public void finalize() {
+	public void finish() {
 		/*
 		 * Calculate mean
 		 */
@@ -659,7 +660,12 @@ public class Simulation {
 		System.out.println(varianceStr.toString());
 		simulationOutput.writeln(varianceStr.toString());
 
-		simulationOutput.closeOutput();
+		try {
+			simulationOutput.closeOutput();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void printArray(Integer[] a) {

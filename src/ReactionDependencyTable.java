@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +147,7 @@ public class ReactionDependencyTable {
 	 * Outputs a string representation of the table Expensive! For debugging
 	 * purposes
 	 */
+	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		for (Map.Entry<Integer, Simulation.Reaction[]> entry : reactionTable

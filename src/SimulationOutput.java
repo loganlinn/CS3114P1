@@ -74,7 +74,6 @@ public class SimulationOutput {
 	 * @param output
 	 */
 	public void write(String output){
-		
 		try {
 			out.write(output);
 			out.flush();
@@ -89,7 +88,6 @@ public class SimulationOutput {
 	 * @param output
 	 */
 	public void writeln(String output){
-		
 		try {
 			out.write(output+"\n");
 			out.flush();
@@ -100,16 +98,17 @@ public class SimulationOutput {
 	}
 	
 	/**
-	 * Closes output
+	 * Closes output stream
+	 * @throws IOException
 	 */
-	public void closeOutput(){
-		try {
-			out.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+	public void closeOutput() throws IOException{
+		out.close();
+	}
+	
+	@Override
+	public void finalize() throws Throwable{
+		closeOutput(); // Close the output stream		
+		super.finalize(); // Call super finalize because we override it
 	}
 	
 }
